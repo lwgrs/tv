@@ -1,127 +1,122 @@
+// 288183935816-m664h9cl5uehdsq7ou35uirj9sn1r4fn.apps.googleusercontent.com
 // Google Drive API configuration
 const CLIENT_ID = '288183935816-m664h9cl5uehdsq7ou35uirj9sn1r4fn.apps.googleusercontent.com'; // Replace with your actual Client ID
+const API_KEY = ''; // Not needed for this approach
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-let tokenClient;
-let gapi_inited = false;
-let gis_inited = false;
+let isSignedIn = false;
 
-// Initialize when scripts are loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeGoogleAPIs();
+// Initialize when page loads
+window.addEventListener('load', () => {
+    gapi.load('auth2', initAuth);
+    gapi.load('client', initClient);
 });
 
-async function initializeGoogleAPIs() {
-    // Wait for gapi to be available
-    if (typeof gapi !== 'undefined') {
-        gapi.load('client', initializeGapiClient);
-    } else {
-        setTimeout(initializeGoogleAPIs, 100);
-    }
-    
-    // Wait for google identity services to be available  
-    if (typeof google !== 'undefined' && google.accounts) {
-        initializeGis();
-    } else {
-        setTimeout(initializeGoogleAPIs, 100);
-    }
-}
-
-async function initializeGapiClient() {
+async function initClient() {
     await gapi.client.init({
         discoveryDocs: [DISCOVERY_DOC],
     });
-    gapi_inited = true;
-    maybeEnableButtons();
 }
 
-function initializeGis() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
+async function initAuth() {
+    await gapi.auth2.init({
         client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: '', // defined later
     });
-    gis_inited = true;
-    maybeEnableButtons();
+    
+    const authInstance = gapi.auth2.getAuthInstance();
+    isSignedIn = authInstance.isSignedIn.get();
+    
+    updateSignInStatus();
+    
+    // Listen for sign-in state changes
+    authInstance.isSignedIn.listen(updateSignInStatus);
 }
 
-function maybeEnableButtons() {
-    if (gapi_inited && gis_inited) {
+function updateSignInStatus() {
+    const authInstance = gapi.auth2.getAuthInstance();
+    isSignedIn = authInstance.isSignedIn.get();
+    
+    if (isSignedIn) {
+        document.getElementById('drive-auth-btn').style.display = 'none';
+        document.getElementById('drive-sync-btn').style.display = 'inline-block';
+        document.getElementById('drive-load-btn').style.display = 'inline-block';
+        document.getElementById('drive-status').innerHTML = '✅ Connected to Google Drive';
+    } else {
         document.getElementById('drive-auth-btn').style.display = 'inline-block';
+        document.getElementById('drive-sync-btn').style.display = 'none';
+        document.getElementById('drive-load-btn').style.display = 'none';
+        document.getElementById('drive-status').innerHTML = '';
     }
 }
 
 // Handle authentication
 function handleAuthClick() {
-    tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-            throw (resp);
-        }
-        document.getElementById('drive-auth-btn').style.display = 'none';
-        document.getElementById('drive-sync-btn').style.display = 'inline-block';
-        document.getElementById('drive-load-btn').style.display = 'inline-block';
-        document.getElementById('drive-status').innerHTML = '✅ Connected to Google Drive';
-    };
+    const authInstance = gapi.auth2.getAuthInstance();
+    authInstance.signIn({
+        scope: SCOPES
+    });
+}
 
-    if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
-    } else {
-        tokenClient.requestAccessToken({prompt: ''});
-    }
+// Handle sign out
+function handleSignOutClick() {
+    const authInstance = gapi.auth2.getAuthInstance();
+    authInstance.signOut();
 }
 
 // Save data to Google Drive
 async function syncToGoogleDrive() {
     try {
-        // Get your TV data (assuming you have a function to get all data)
-        const tvData = getAllTVData(); // You'll need to implement this based on your existing code
+        if (!isSignedIn) {
+            document.getElementById('drive-status').innerHTML = '❌ Please sign in first';
+            return;
+        }
+        
+        // Get your TV data
+        const tvData = getAllTVData();
         
         const fileName = 'tv-show-tracker-data.json';
         const fileMetadata = {
             'name': fileName
         };
         
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
-        form.append('file', new Blob([JSON.stringify(tvData, null, 2)], {type: 'application/json'}));
-        
         // Check if file already exists
-        const existingFiles = await gapi.client.drive.files.list({
+        const response = await gapi.client.drive.files.list({
             q: `name='${fileName}'`,
             spaces: 'drive'
         });
         
-        let response;
-        if (existingFiles.result.files.length > 0) {
+        const fileContent = JSON.stringify(tvData, null, 2);
+        
+        if (response.result.files.length > 0) {
             // Update existing file
-            const fileId = existingFiles.result.files[0].id;
-            response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
-                method: 'PATCH',
-                headers: new Headers({
-                    'Authorization': `Bearer ${gapi.client.getToken().access_token}`
-                }),
-                body: form
+            const fileId = response.result.files[0].id;
+            await gapi.client.request({
+                'path': `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+                'method': 'PATCH',
+                'params': {'uploadType': 'media'},
+                'headers': {
+                    'Content-Type': 'application/json'
+                },
+                'body': fileContent
             });
         } else {
             // Create new file
-            response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: new Headers({
-                    'Authorization': `Bearer ${gapi.client.getToken().access_token}`
-                }),
-                body: form
+            await gapi.client.request({
+                'path': 'https://www.googleapis.com/upload/drive/v3/files',
+                'method': 'POST',
+                'params': {'uploadType': 'multipart'},
+                'headers': {
+                    'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
+                },
+                'body': `--foo_bar_baz\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(fileMetadata)}\r\n--foo_bar_baz\r\nContent-Type: application/json\r\n\r\n${fileContent}\r\n--foo_bar_baz--`
             });
         }
         
-        if (response.ok) {
-            document.getElementById('drive-status').innerHTML = '✅ Data saved to Google Drive!';
-            setTimeout(() => {
-                document.getElementById('drive-status').innerHTML = '✅ Connected to Google Drive';
-            }, 3000);
-        } else {
-            throw new Error('Failed to save to Drive');
-        }
+        document.getElementById('drive-status').innerHTML = '✅ Data saved to Google Drive!';
+        setTimeout(() => {
+            document.getElementById('drive-status').innerHTML = '✅ Connected to Google Drive';
+        }, 3000);
         
     } catch (error) {
         console.error('Error saving to Google Drive:', error);
@@ -132,6 +127,11 @@ async function syncToGoogleDrive() {
 // Load data from Google Drive
 async function loadFromGoogleDrive() {
     try {
+        if (!isSignedIn) {
+            document.getElementById('drive-status').innerHTML = '❌ Please sign in first';
+            return;
+        }
+        
         const fileName = 'tv-show-tracker-data.json';
         
         // Find the file
@@ -155,8 +155,8 @@ async function loadFromGoogleDrive() {
         
         const tvData = JSON.parse(response.body);
         
-        // Load the data (you'll need to implement this based on your existing import code)
-        loadTVData(tvData); // You'll need to implement this
+        // Load the data using the same logic as importJSON
+        loadTVData(tvData);
         
         document.getElementById('drive-status').innerHTML = '✅ Data loaded from Google Drive!';
         setTimeout(() => {
@@ -186,8 +186,3 @@ function loadTVData(data) {
         document.getElementById('drive-status').innerHTML = '❌ Invalid data format';
     }
 }
-
-// Initialize when page loads
-window.addEventListener('load', () => {
-    initializeGoogleAPIs();
-});

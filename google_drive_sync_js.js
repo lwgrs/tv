@@ -154,19 +154,22 @@ async function loadFromGoogleDrive() {
     }
 }
 
-// Helper functions - you'll need to implement these based on your existing code
+// Helper functions - using the exact same logic as the existing export/import
 function getAllTVData() {
-    // This should return the same data that your current "export" function generates
-    // Look at your existing export functionality and copy that logic here
-    return localStorage.getItem('tvShows') ? JSON.parse(localStorage.getItem('tvShows')) : {};
+    // Use the same function that exportJSON() uses
+    return getShowsObject();
 }
 
 function loadTVData(data) {
-    // This should do the same thing as your current "import" function
-    // Look at your existing import functionality and copy that logic here
-    localStorage.setItem('tvShows', JSON.stringify(data));
-    // You might need to call a refresh function here to update the UI
-    location.reload(); // Simple way to refresh the app with new data
+    // Use the same logic that importJSON() uses
+    if (typeof data === "object" && typeof data.settings !== "undefined" && typeof data.shows !== "undefined") {
+        commitToLS(data);
+        refreshDisplay(data);
+        markChanged(false);
+    } else {
+        console.error("Invalid data structure for TV data");
+        document.getElementById('drive-status').innerHTML = '❌ Invalid data format';
+    }
 }
 
 // Initialize when page loads

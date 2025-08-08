@@ -15,7 +15,7 @@
 
     </style>
     <script src="https://apis.google.com/js/api.js"></script>
-    <script src="js/google-drive-sync.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 </head>
 
 <body class="unchecked">
@@ -113,15 +113,16 @@
                                                                                    class="github-logo"></a>
                 <h1>Settings</h1>
                 <div class="inner">
-                    <div class="drive-sync-section">
+                    
+                    <div class="importExportButtons"><input id="export" type="button" value="Export Shows"> <input
+                            id="import" type="button" value="Import Shows"></div>
+                            <div class="drive-sync-section">
     <h3>Google Drive Sync</h3>
     <button id="drive-auth-btn" onclick="handleAuthClick()">Sign in to Google Drive</button>
     <button id="drive-sync-btn" onclick="syncToGoogleDrive()" style="display:none;">Save to Google Drive</button>
     <button id="drive-load-btn" onclick="loadFromGoogleDrive()" style="display:none;">Load from Google Drive</button>
     <div id="drive-status"></div>
 </div>
-                    <div class="importExportButtons"><input id="export" type="button" value="Export Shows"> <input
-                            id="import" type="button" value="Import Shows"></div>
                     <div class="row"><label for="settingsShowEmojis">Show Emojis</label><input checked class="setting"
                                                                                                id="settingsShowEmojis"
                                                                                                type="checkbox"></div>

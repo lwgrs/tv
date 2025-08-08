@@ -1,5 +1,5 @@
 // Google Drive API configuration
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE'; // Replace with your actual Client ID
+const CLIENT_ID = '288183935816-m664h9cl5uehdsq7ou35uirj9sn1r4fn.apps.googleusercontent.com'; // Replace with your actual Client ID
 const API_KEY = ''; // We'll use OAuth only, no API key needed
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';

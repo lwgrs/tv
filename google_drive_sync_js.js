@@ -7,8 +7,20 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let isSignedIn = false;
 
+// Make sure functions are available globally
+window.handleAuthClick = handleAuthClick;
+window.handleSignOutClick = handleSignOutClick;
+window.syncToGoogleDrive = syncToGoogleDrive;
+window.loadFromGoogleDrive = loadFromGoogleDrive;
+
 // Initialize when page loads
 window.addEventListener('load', () => {
+    // Wait for gapi to be available
+    if (typeof gapi === 'undefined') {
+        console.error('Google API not loaded');
+        return;
+    }
+    
     gapi.load('auth2', initAuth);
     gapi.load('client', initClient);
 });
@@ -186,3 +198,9 @@ function loadTVData(data) {
         document.getElementById('drive-status').innerHTML = '❌ Invalid data format';
     }
 }
+
+// Ensure functions are globally available
+window.handleAuthClick = handleAuthClick;
+window.handleSignOutClick = handleSignOutClick;
+window.syncToGoogleDrive = syncToGoogleDrive;
+window.loadFromGoogleDrive = loadFromGoogleDrive;

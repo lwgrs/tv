@@ -14,8 +14,7 @@
         }
 
     </style>
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="google-drive-sync.js"></script>
+    <script src="gist-sync.js"></script>
 </head>
 
 <body class="unchecked">
@@ -116,13 +115,12 @@
                     
                     <div class="importExportButtons"><input id="export" type="button" value="Export Shows"> <input
                             id="import" type="button" value="Import Shows"></div>
-                    <div class="drive-sync-section">
-                        <h3>Google Drive Sync</h3>
-                        <button id="drive-auth-btn" onclick="handleAuthClick()">Sign in to Google Drive</button>
-                        <button id="drive-sync-btn" onclick="syncToGoogleDrive()" style="display:none;">Save to Google Drive</button>
-                        <button id="drive-load-btn" onclick="loadFromGoogleDrive()" style="display:none;">Load from Google Drive</button>
-                        <div id="drive-status"></div>
-                    </div>        
+                    <div class="gist-sync-section">
+    <h3>GitHub Gist Sync</h3>
+    <button id="gist-sync-btn" onclick="syncToGitHubGist()">Save to GitHub Gist</button>
+    <button id="gist-load-btn" onclick="loadFromGitHubGist()">Load from GitHub Gist</button>
+    <div id="gist-status"></div>
+</div>       
                             
                     <div class="row"><label for="settingsShowEmojis">Show Emojis</label><input checked class="setting"
                                                                                                id="settingsShowEmojis"

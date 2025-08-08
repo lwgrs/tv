@@ -1,6 +1,5 @@
 // Google Drive API configuration
 const CLIENT_ID = '288183935816-m664h9cl5uehdsq7ou35uirj9sn1r4fn.apps.googleusercontent.com'; // Replace with your actual Client ID
-const API_KEY = ''; // We'll use OAuth only, no API key needed
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -8,9 +7,25 @@ let tokenClient;
 let gapi_inited = false;
 let gis_inited = false;
 
-// Initialize the APIs
-function gapiLoaded() {
-    gapi.load('client', initializeGapiClient);
+// Initialize when scripts are loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGoogleAPIs();
+});
+
+async function initializeGoogleAPIs() {
+    // Wait for gapi to be available
+    if (typeof gapi !== 'undefined') {
+        gapi.load('client', initializeGapiClient);
+    } else {
+        setTimeout(initializeGoogleAPIs, 100);
+    }
+    
+    // Wait for google identity services to be available  
+    if (typeof google !== 'undefined' && google.accounts) {
+        initializeGis();
+    } else {
+        setTimeout(initializeGoogleAPIs, 100);
+    }
 }
 
 async function initializeGapiClient() {
@@ -21,7 +36,7 @@ async function initializeGapiClient() {
     maybeEnableButtons();
 }
 
-function gisLoaded() {
+function initializeGis() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -174,6 +189,5 @@ function loadTVData(data) {
 
 // Initialize when page loads
 window.addEventListener('load', () => {
-    gapiLoaded();
-    gisLoaded();
+    initializeGoogleAPIs();
 });
